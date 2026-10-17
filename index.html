@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RashGram</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    
+    body { background-color: #000; color: #fff; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
+
+    /* Container HP */
+    .app-container { width: 100%; max-width: 480px; background: #000; position: relative; min-height: 100vh; padding-bottom: 60px; }
+
+    /* Header */
+    .header { position: sticky; top: 0; background: #000; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; z-index: 100; border-bottom: 1px solid #222; }
+    .header h1 { font-size: 24px; font-weight: 600; font-family: cursive; }
+    .header-icons { display: flex; gap: 15px; font-size: 20px; }
+
+    /* Stories */
+    .stories-container { display: flex; gap: 15px; padding: 10px 15px; overflow-x: auto; scrollbar-width: none; }
+    .stories-container::-webkit-scrollbar { display: none; }
+    .story { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+    .story-ring { width: 68px; height: 68px; border-radius: 50%; padding: 3px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+    .story-ring.add { background: #222; }
+    .story-img { width: 100%; height: 100%; border-radius: 50%; background: #333; border: 2px solid #000; display: flex; justify-content: center; align-items: center; font-size: 24px; color: #888; }
+    .story-name { font-size: 12px; color: #fff; max-width: 68px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Feed */
+    .feed { padding-bottom: 20px; }
+    .post { margin-bottom: 20px; border-bottom: 1px solid #111; }
+    .post-header { display: flex; align-items: center; padding: 10px 15px; gap: 10px; }
+    .post-avatar { width: 32px; height: 32px; border-radius: 50%; background: #333; }
+    .post-username { font-size: 14px; font-weight: 600; flex: 1; }
+    .post-menu { font-size: 20px; cursor: pointer; }
+    
+    .post-image { width: 100%; aspect-ratio: 1/1; background: #1a1a1a; display: flex; justify-content: center; align-items: center; color: #444; font-size: 40px; overflow: hidden; }
+    .post-image img { width: 100%; height: 100%; object-fit: cover; }
+
+    .post-actions { padding: 10px 15px; }
+    .action-icons { display: flex; gap: 15px; font-size: 24px; margin-bottom: 10px; }
+    .action-icons i { cursor: pointer; transition: 0.2s; }
+    .action-icons i.liked { color: #ed4956; }
+    .action-icons i:hover { transform: scale(1.1); }
+    .likes { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
+    .caption { font-size: 14px; line-height: 1.4; }
+    .caption span { font-weight: 600; margin-right: 5px; }
+    .comments { font-size: 14px; color: #888; margin-top: 5px; cursor: pointer; }
+    .time { font-size: 10px; color: #888; margin-top: 5px; text-transform: uppercase; }
+
+    /* Bottom Nav */
+    .bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 480px; background: #000; border-top: 1px solid #222; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
+    .nav-item { font-size: 24px; cursor: pointer; color: #fff; }
+    .nav-item.active { color: #fff; }
+    .nav-item.profile-pic { width: 26px; height: 26px; border-radius: 50%; background: #333; border: 1px solid #fff; }
+
+    /* Halaman Lain (Sembunyi) */
+    .page { display: none; padding: 15px; }
+    .page.active { display: block; }
+
+    /* Halaman Tambah Post */
+    .upload-area { border: 2px dashed #333; border-radius: 10px; padding: 40px 20px; text-align: center; margin-bottom: 20px; cursor: pointer; }
+    .upload-area:hover { border-color: #888; }
+    .upload-input { width: 100%; background: #111; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; margin-bottom: 15px; outline: none; }
+    .btn-upload { width: 100%; background: #0095f6; color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
+    .btn-upload:disabled { background: #00376b; color: #888; }
+
+    /* Halaman Profil */
+    .profile-header { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
+    .profile-pic-big { width: 80px; height: 80px; border-radius: 50%; background: #333; border: 2px solid #222; }
+    .profile-stats { display: flex; gap: 20px; text-align: center; }
+    .profile-stats div { display: flex; flex-direction: column; font-size: 14px; }
+    .profile-stats div span { font-weight: 600; font-size: 16px; }
+    .profile-bio { font-size: 14px; line-height: 1.4; margin-bottom: 20px; }
+    .profile-edit { width: 100%; background: #222; color: #fff; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .grid-photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+    .grid-photo { aspect-ratio: 1/1; background: #1a1a1a; display: flex; justify-content: center; align-items: center; color: #444; }
+
+    /* Loading Spinner */
+    .spinner { display: none; width: 20px; height: 20px; border: 2px solid #fff; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+</style>
+<!-- FontAwesome untuk Ikon -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- HALAMAN BERANDA -->
+    <div id="pageHome" class="page active" style="padding: 0;">
+        <div class="header">
+            <h1>RashGram</h1>
+            <div class="header-icons">
+                <i class="far fa-heart"></i>
+                <i class="far fa-paper-plane"></i>
+            </div>
+        </div>
+
+        <!-- Stories -->
+        <div class="stories-container">
+            <div class="story">
+                <div class="story-ring add">
+                    <div class="story-img"><i class="fas fa-plus"></i></div>
+                </div>
+                <div class="story-name">Story Kamu</div>
+            </div>
+            <div class="story">
+                <div class="story-ring"><div class="story-img" style="background:#e1306c;">A</div></div>
+                <div class="story-name">andi</div>
+            </div>
+            <div class="story">
+                <div class="story-ring"><div class="story-img" style="background:#4facfe;">B</div></div>
+                <div class="story-name">budi</div>
+            </div>
+            <div class="story">
+                <div class="story-ring"><div class="story-img" style="background:#00ff87;">C</div></div>
+                <div class="story-name">citra</div>
+            </div>
+            <div class="story">
+                <div class="story-ring"><div class="story-img" style="background:#f09433;">D</div></div>
+                <div class="story-name">dewi</div>
+            </div>
+        </div>
+
+        <!-- Feed -->
+        <div class="feed" id="feedContainer">
+            <!-- Post 1 -->
+            <div class="post">
+                <div class="post-header">
+                    <div class="post-avatar" style="background:#e1306c;"></div>
+                    <div class="post-username">andi_keren</div>
+                    <i class="fas fa-ellipsis-h post-menu"></i>
+                </div>
+                <div class="post-image">
+                    <i class="fas fa-image"></i>
+                </div>
+                <div class="post-actions">
+                    <div class="action-icons">
+                        <i class="far fa-heart" onclick="toggleLike(this)"></i>
+                        <i class="far fa-comment"></i>
+                        <i class="far fa-paper-plane"></i>
+                    </div>
+                    <div class="likes">1.245 suka</div>
+                    <div class="caption"><span>andi_keren</span> Pagi dunia! Semangat menjalani hari ini! ☀️🚀</div>
+                    <div class="comments">Lihat semua 45 komentar</div>
+                    <div class="time">2 JAM YANG LALU</div>
+                </div>
+            </div>
+
+            <!-- Post 2 -->
+            <div class="post">
+                <div class="post-header">
+                    <div class="post-avatar" style="background:#4facfe;"></div>
+                    <div class="post-username">budi_santoso</div>
+                    <i class="fas fa-ellipsis-h post-menu"></i>
+                </div>
+                <div class="post-image">
+                    <i class="fas fa-mountain"></i>
+                </div>
+                <div class="post-actions">
+                    <div class="action-icons">
+                        <i class="far fa-heart" onclick="toggleLike(this)"></i>
+                        <i class="far fa-comment"></i>
+                        <i class="far fa-paper-plane"></i>
+                    </div>
+                    <div class="likes">892 suka</div>
+                    <div class="caption"><span>budi_santoso</span> Healing dulu sebentar ke gunung 🏔️🏕️</div>
+                    <div class="comments">Lihat semua 12 komentar</div>
+                    <div class="time">5 JAM YANG LALU</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HALAMAN TAMBAH POST -->
+    <div id="pageAdd" class="page">
+        <div class="header" style="border:none; padding:0; margin-bottom:20px; position:static;">
+            <h1 style="font-size:20px; font-family:inherit;">Postingan Baru</h1>
+        </div>
+        
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-camera" style="font-size:40px; color:#888; margin-bottom:10px;"></i>
+            <div style="color:#888;">Pilih foto dari galeri</div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="previewImage(event)">
+        
+        <div id="previewContainer" style="display:none; margin-bottom:20px; text-align:center;">
+            <img id="imagePreview" style="max-width:100%; border-radius:10px; max-height:300px; object-fit:cover;">
+        </div>
+
+        <input type="text" id="captionInput" class="upload-input" placeholder="Tulis caption keren..." maxlength="150">
+        
+        <button class="btn-upload" id="btnPost" onclick="submitPost()" disabled>Bagikan</button>
+        <div class="spinner" id="spinner" style="margin-top:15px;"></div>
+    </div>
+
+    <!-- HALAMAN PROFIL -->
+    <div id="pageProfile" class="page">
+        <div class="header" style="border:none; padding:0; margin-bottom:20px; position:static;">
+            <h1 style="font-size:20px; font-family:inherit;">Profil Saya</h1>
+        </div>
+
+        <div class="profile-header">
+            <div class="profile-pic-big" style="background:#e1306c; display:flex; justify-content:center; align-items:center; font-size:30px; font-weight:bold;">R</div>
+            <div class="profile-stats">
+                <div><span>12</span>Postingan</div>
+                <div><span>1.2K</span>Pengikut</div>
+                <div><span>345</span>Mengikuti</div>
+            </div>
+        </div>
+
+        <div class="profile-bio">
+            <div style="font-weight:600; margin-bottom:5px;">Rashxiter</div>
+            <div style="color:#888;">Developer & Creator 💀</div>
+            <div style="color:#888;">Bikin tools & web keren.</div>
+        </div>
+
+        <button class="profile-edit">Edit Profil</button>
+
+        <div class="grid-photos" style="margin-top:20px;">
+            <div class="grid-photo"><i class="fas fa-image"></i></div>
+            <div class="grid-photo"><i class="fas fa-image"></i></div>
+            <div class="grid-photo"><i class="fas fa-image"></i></div>
+            <div class="grid-photo"><i class="fas fa-image"></i></div>
+            <div class="grid-photo"><i class="fas fa-image"></i></div>
+            <div class="grid-photo"><i class="fas fa-image"></i></div>
+        </div>
+    </div>
+
+    <!-- HALAMAN PENCARIAN (DUMMY) -->
+    <div id="pageSearch" class="page">
+        <div class="header" style="border:none; padding:0; margin-bottom:20px; position:static;">
+            <h1 style="font-size:20px; font-family:inherit;">Pencarian</h1>
+        </div>
+        <input type="text" class="upload-input" placeholder="Cari akun atau postingan...">
+        <div style="text-align:center; color:#555; margin-top:50px;">
+            <i class="fas fa-search" style="font-size:40px; margin-bottom:10px;"></i>
+            <p>Belum ada riwayat pencarian</p>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <div class="bottom-nav">
+        <i class="fas fa-home nav-item active" id="navHome" onclick="switchPage('home')"></i>
+        <i class="fas fa-search nav-item" id="navSearch" onclick="switchPage('search')"></i>
+        <i class="far fa-plus-square nav-item" id="navAdd" onclick="switchPage('add')"></i>
+        <i class="far fa-heart nav-item" id="navNotif" onclick="switchPage('home')"></i>
+        <div class="nav-item profile-pic" id="navProfile" onclick="switchPage('profile')" style="background:#e1306c; display:flex; justify-content:center; align-items:center; font-size:12px; font-weight:bold;">R</div>
+    </div>
+
+</div>
+
+<script>
+    // Data Postingan Sementara
+    let posts = [];
+
+    // Fungsi Navigasi Bawah
+    function switchPage(pageName) {
+        // Sembunyikan semua halaman
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        // Hapus class active dari semua nav
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+
+        // Tampilkan halaman yang dipilih
+        document.getElementById('page' + pageName.charAt(0).toUpperCase() + pageName.slice(1)).classList.add('active');
+
+        // Set active nav icon
+        if (pageName === 'home') document.getElementById('navHome').classList.add('active');
+        if (pageName === 'search') document.getElementById('navSearch').classList.add('active');
+        if (pageName === 'add') document.getElementById('navAdd').classList.add('active');
+        if (pageName === 'profile') document.getElementById('navProfile').classList.add('active');
+        
+        // Scroll ke atas
+        window.scrollTo(0, 0);
+    }
+
+    // Fungsi Like
+    function toggleLike(el) {
+        if (el.classList.contains('far')) {
+            el.classList.remove('far');
+            el.classList.add('fas', 'liked');
+        } else {
+            el.classList.remove('fas', 'liked');
+            el.classList.add('far');
+        }
+    }
+
+    // Fungsi Preview Image saat Upload
+    function previewImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('previewContainer').style.display = 'block';
+                document.getElementById('btnPost').disabled = false;
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Fungsi Submit Post
+    function submitPost() {
+        const caption = document.getElementById('captionInput').value;
+        const imgSrc = document.getElementById('imagePreview').src;
+        
+        if (!imgSrc) return;
+
+        // Tampilkan loading
+        document.getElementById('btnPost').style.display = 'none';
+        document.getElementById('spinner').style.display = 'block';
+
+        // Simulasi loading 1.5 detik
+        setTimeout(() => {
+            // Buat elemen post baru
+            const newPostHTML = `
+                <div class="post">
+                    <div class="post-header">
+                        <div class="post-avatar" style="background:#e1306c;"></div>
+                        <div class="post-username">rashxiter</div>
+                        <i class="fas fa-ellipsis-h post-menu"></i>
+                    </div>
+                    <div class="post-image">
+                        <img src="${imgSrc}">
+                    </div>
+                    <div class="post-actions">
+                        <div class="action-icons">
+                            <i class="far fa-heart" onclick="toggleLike(this)"></i>
+                            <i class="far fa-comment"></i>
+                            <i class="far fa-paper-plane"></i>
+                        </div>
+                        <div class="likes">0 suka</div>
+                        <div class="caption"><span>rashxiter</span> ${caption || 'Tanpa caption'}</div>
+                        <div class="comments">Tambah komentar...</div>
+                        <div class="time">BARU SAJA</div>
+                    </div>
+                </div>
+            `;
+
+            // Tambahkan ke feed
+            const feedContainer = document.getElementById('feedContainer');
+            feedContainer.insertAdjacentHTML('afterbegin', newPostHTML);
+
+            // Reset form
+            document.getElementById('imagePreview').src = '';
+            document.getElementById('previewContainer').style.display = 'none';
+            document.getElementById('captionInput').value = '';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('btnPost').disabled = true;
+            document.getElementById('btnPost').style.display = 'block';
+            document.getElementById('spinner').style.display = 'none';
+
+            // Pindah ke Home
+            switchPage('home');
+            
+            alert('✅ Postingan berhasil dibagikan!');
+        }, 1500);
+    }
+
+    // Inisialisasi
+    document.addEventListener('DOMContentLoaded', () => {
+        // Cek sesi login palsu
+        if(!localStorage.getItem('rashgram_logged')) {
+            localStorage.setItem('rashgram_logged', 'true');
+        }
+    });
+
+</script>
+</body>
+</html>
